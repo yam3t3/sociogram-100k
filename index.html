@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sociogram 100k ranking list</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.11.5/css/jquery.dataTables.css">
+    <script src="https://code.jquery.com/jquery-3.6.4.min.js"></script>
+    <script src="https://cdn.datatables.net/1.11.5/js/jquery.dataTables.js"></script>
+</head>
+<body>
+
+<div class="container mt-4">
+    <table id="jsonTable" class="table table-bordered">
+        <thead>
+            <tr>
+                <th>Rank</th>
+                <th>Points</th>
+                <th>Address</th>
+                <th>Born At</th>
+                <th>Space ID</th>
+                <th>Twitter Name</th>
+                <th>ENS</th>
+                <th>Is Tokenized</th>
+            </tr>
+        </thead>
+        <tbody>
+            <!-- Table body will be populated using JavaScript -->
+        </tbody>
+    </table>
+</div>
+
+<script>
+    // Fetch the JSON file
+    fetch('sociogram_all.json')
+        .then(response => response.json())
+        .then(jsonData => {
+            // Sort the data by points in descending order
+            jsonData.sort((a, b) => b.points - a.points);
+
+            // Get the table body element
+            var tableBody = $('#jsonTable tbody');
+
+            // Loop through the sorted JSON data and populate the table with rank
+            for (var i = 0; i < jsonData.length; i++) {
+                var row = tableBody[0].insertRow(i);
+
+                var cellRank = row.insertCell(0);
+                var cellPoints = row.insertCell(1);
+                var cellAddress = row.insertCell(2);
+                var cellBornAt = row.insertCell(3);
+                var cellSpaceId = row.insertCell(4);
+                var cellTwitterName = row.insertCell(5);
+                var cellEns = row.insertCell(6);
+                var cellIsTokenized = row.insertCell(7);
+
+                cellRank.innerHTML = i + 1; // Rank starts from 1
+                cellPoints.innerHTML = jsonData[i].points;
+                cellAddress.innerHTML = jsonData[i].user.address;
+                cellBornAt.innerHTML = jsonData[i].user.metadata?.born_at;
+                cellSpaceId.innerHTML = jsonData[i].user.metadata?.space_id;
+                cellTwitterName.innerHTML = jsonData[i].user.metadata?.twitter_name;
+                cellEns.innerHTML = jsonData[i].user.ens;
+                cellIsTokenized.innerHTML = jsonData[i].user.is_tokenized;
+            }
+
+            // Initialize DataTable with Bootstrap styling and column filtering
+            var dataTable = $('#jsonTable').DataTable({
+                "order": [[1, 'desc']], // Default sort by Points column in descending order
+                "initComplete": function () {
+                    // Add filter dropdown for Is Tokenized column to the header and footer
+                    this.api().columns(7).every(function () {
+                        var column = this;
+                        var select = $('<select class="form-control form-control-sm"><option value=""></option></select>')
+                            .appendTo($(column.header()).empty())
+                            .on('change', function () {
+                                var val = $.fn.dataTable.util.escapeRegex(
+                                    $(this).val()
+                                );
+
+                                column
+                                    .search(val ? '^' + val + '$' : '', true, false)
+                                    .draw();
+                            });
+
+                        column.data().unique().sort().each(function (d, j) {
+                            select.append('<option value="' + d + '">' + d + '</option>');
+                        });
+                    });
+                }
+            });
+        })
+        .catch(error => console.error('Error loading JSON:', error));
+</script>
+
+</body>
+</html>
